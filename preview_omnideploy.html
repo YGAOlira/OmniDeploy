@@ -1,0 +1,1108 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniDeploy - Mídia de Implantação v1.0 - Tela de Boot WinPE</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Segoe+UI:wght@400;600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #030712;
+      color: #E6EAF2;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    /* Cores fiéis ao Dark.xaml do WPF */
+    :root {
+      --bg: #0A0F1C;
+      --surface: #111827;
+      --surface2: #172033;
+      --surface3: #1E2A42;
+      --border: #26344F;
+      --accent: #3B82F6;
+      --accent2: #6366F1;
+      --text: #E6EAF2;
+      --muted: #8C9AB3;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+    }
+
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .card-hover:hover {
+      border-color: #3B82F6;
+      background-color: #142449;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.2);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #34446A;
+      border-radius: 4px;
+    }
+
+    .accent-gradient {
+      background: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+    }
+
+    .header-gradient {
+      background: linear-gradient(90deg, #0F1A33 0%, #111827 60%, #16123A 100%);
+    }
+
+    /* Efeito de scanline sutil do monitor WinPE */
+    .winpe-screen {
+      background: radial-gradient(circle at 50% 50%, #0d1527 0%, #060913 100%);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px #1f293d;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6 min-h-screen flex flex-col items-center justify-center">
+
+  <!-- TOPO: Indicador de Ambiente WinPE Simulado -->
+  <div class="w-full max-w-[1360px] flex items-center justify-between pb-3 px-2 text-xs text-slate-400">
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="font-mono font-semibold text-slate-200">Windows PE 10.0.26100 (x64)</span>
+      <span class="text-slate-600">|</span>
+      <span>Resolução: 1920x1080</span>
+      <span class="text-slate-600">|</span>
+      <span>Unidade RAM: X:\ (Boot)</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="bg-blue-950/60 border border-blue-800/50 text-blue-300 px-2 py-0.5 rounded text-[11px] font-mono">
+        winpeshl.ini &rarr; OmniDeploy.exe
+      </span>
+      <button onclick="toggleFullscreen()" class="hover:text-white transition-colors cursor-pointer text-slate-400">
+        ⛶ Tela Cheia
+      </button>
+    </div>
+  </div>
+
+  <!-- JANELA PRINCIPAL DO APLICATIVO OmniDeploy.exe -->
+  <div id="app-window" class="winpe-screen w-full max-w-[1360px] rounded-2xl overflow-hidden border border-[#26344F] flex flex-col h-[820px] transition-all">
+
+    <!-- 1. CABEÇALHO -->
+    <header class="header-gradient border-b border-[#26344F] px-6 py-3.5 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-4">
+        <!-- Ícone Logotipo OmniDeploy -->
+        <div class="w-12 h-12 rounded-xl accent-gradient flex flex-col items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <span class="text-[8px] font-extrabold tracking-widest text-white mt-[-2px]">OmniDeploy</span>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold tracking-tight text-white">OmniDeploy - Mídia de Implantação</h1>
+            <span class="bg-[#1D3A6E] border border-blue-500/50 text-blue-300 text-xs px-2.5 py-0.5 rounded-md font-semibold">
+              v1.0
+            </span>
+          </div>
+          <p class="text-xs text-[#8C9AB3] mt-0.5 font-medium">Desenvolvido por Ygor Paes</p>
+        </div>
+      </div>
+
+      <!-- Badges do Ambiente em Tempo Real -->
+      <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2 bg-[#1E2A42] border border-[#26344F] px-3 py-1.5 rounded-full text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+          <span class="text-slate-200">Windows PE</span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-[#1E2A42] border border-[#26344F] px-3 py-1.5 rounded-full text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[#8C9AB3]">Boot:</span>
+          <span class="font-semibold text-white">UEFI (GPT)</span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-[#1E2A42] border border-[#26344F] px-3 py-1.5 rounded-full text-xs">
+          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+          <span class="font-semibold text-blue-200">OMNI_DADOS em D:</span>
+        </div>
+
+        <!-- Botão Fechar Janela -->
+        <button class="ml-2 text-slate-400 hover:text-white hover:bg-red-500/20 p-2 rounded-lg transition-colors cursor-pointer" title="Sair do WinPE">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. CORPO PRINCIPAL (Barra Lateral + Área da Etapa) -->
+    <div class="flex-1 p-5 grid grid-cols-12 gap-5 overflow-hidden">
+      
+      <!-- LATERAL ESQUERDA (3 colunas / 12) -->
+      <aside class="col-span-4 lg:col-span-3 flex flex-col gap-4 overflow-y-auto custom-scroll pr-1">
+        
+        <!-- CARD 1: DIAGNÓSTICO DE HARDWARE (WMI) -->
+        <div class="card p-4 shrink-0 shadow-md">
+          <div class="flex items-center justify-between mb-3 border-b border-[#26344F] pb-2">
+            <span class="text-xs font-semibold text-[#8C9AB3] tracking-wider uppercase">Diagnóstico de Hardware</span>
+            <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> WMI OK
+            </span>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <div class="text-[10px] font-semibold text-[#8C9AB3] uppercase tracking-wider">Fabricante / Modelo</div>
+              <div class="text-sm font-semibold text-white mt-0.5">Lenovo ThinkPad T14 Gen 2</div>
+              <div class="text-[11px] text-slate-400 font-mono">20W00049BR (Notebook Corporativo)</div>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-[#8C9AB3] uppercase tracking-wider">Processador</div>
+              <div class="text-xs text-slate-200 mt-0.5">11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz (4C/8T)</div>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-[#8C9AB3] uppercase tracking-wider">Número de Série / Service Tag</div>
+              <div class="flex items-center justify-between bg-[#172033] border border-[#26344F] rounded-lg px-2.5 py-1.5 mt-1">
+                <span id="serial-number" class="font-mono text-sm font-bold text-amber-300">PF3X9K8M</span>
+                <button onclick="copiarSerial()" class="text-xs bg-[#1E2A42] hover:bg-blue-600/30 text-slate-300 hover:text-white px-2 py-0.5 rounded border border-[#26344F] transition-colors cursor-pointer flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span id="btn-copy-label">Copiar</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-[#8C9AB3] uppercase tracking-wider">Memória RAM</div>
+              <div class="text-xs font-semibold text-slate-200 mt-0.5">16.0 GB DDR4 (Dual-Channel)</div>
+            </div>
+          </div>
+
+          <!-- Alerta de Desbloqueio -->
+          <div class="mt-3.5 bg-emerald-950/40 border border-emerald-800/40 rounded-lg p-2.5">
+            <p class="text-[11px] text-emerald-300 leading-tight">
+              ✓ Sem bloqueios de TPM 2.0, Secure Boot ou RAM mínima: a imagem é aplicada diretamente via DISM.
+            </p>
+          </div>
+        </div>
+
+        <!-- CARD 2: LISTA DE ETAPAS DO WIZARD -->
+        <div class="card p-3 flex-1">
+          <div class="text-[10px] font-semibold text-[#8C9AB3] uppercase tracking-wider px-2 py-1 mb-1">
+            Etapas da Implantação
+          </div>
+          <nav id="steps-nav" class="space-y-1">
+            <!-- Gerado via JS -->
+          </nav>
+        </div>
+
+      </aside>
+
+      <!-- ÁREA CENTRAL DO WIZARD (9 colunas / 12) -->
+      <main class="col-span-8 lg:col-span-9 card p-6 flex flex-col justify-between overflow-y-auto custom-scroll shadow-xl">
+        
+        <div>
+          <!-- Subtítulo e Indicador -->
+          <div class="flex items-center justify-between border-b border-[#26344F] pb-3 mb-4">
+            <div>
+              <span id="step-breadcrumb" class="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                Etapa 1 de 6 • Disco de Destino
+              </span>
+              <h2 id="step-title" class="text-xl font-bold text-white mt-1">
+                Selecione o disco de destino
+              </h2>
+            </div>
+            <div id="step-action-badge">
+              <!-- Botão ou badge contextual -->
+            </div>
+          </div>
+
+          <!-- CONTAINER DINÂMICO DA ETAPA -->
+          <div id="step-container" class="min-h-[460px]">
+            <!-- Injetado dinamicamente -->
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- 3. RODAPÉ FIXO -->
+    <footer class="bg-[#111827] border-t border-[#26344F] px-6 py-3.5 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <button onclick="abrirCmdModal()" class="bg-[#1E2A42] hover:bg-[#26344F] border border-[#26344F] text-slate-200 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2">
+          <span class="font-mono text-blue-400">&gt;_</span> Prompt (CMD)
+        </button>
+        <button onclick="alert('No WinPE real, este comando executa: wpeutil shutdown')" class="bg-[#1E2A42] hover:bg-red-950/40 border border-[#26344F] text-slate-300 hover:text-red-300 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+          Desligar
+        </button>
+        <span id="toast-msg" class="text-xs text-emerald-400 font-medium px-2 py-1 bg-emerald-950/40 border border-emerald-800/40 rounded hidden">
+          ✓ Copiado com sucesso!
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btn-voltar" onclick="mudarEtapa(etapaAtual - 1)" class="bg-[#1E2A42] hover:bg-[#26344F] border border-[#26344F] text-slate-300 px-5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+          &larr; Voltar
+        </button>
+        
+        <button id="btn-proximo" onclick="mudarEtapa(etapaAtual + 1)" class="accent-gradient hover:opacity-95 text-white px-6 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all cursor-pointer">
+          Próximo &rarr;
+        </button>
+
+        <button id="btn-iniciar" onclick="abrirModalConfirmacao()" class="bg-red-600 hover:bg-red-500 text-white px-7 py-2 rounded-lg text-xs font-bold shadow-lg shadow-red-500/25 transition-all cursor-pointer hidden">
+          Iniciar Implantação
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MODAL DE CONFIRMAÇÃO DE FORMATAÇÃO (ETAPA 6) -->
+  <div id="modal-confirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-[#111827] border-2 border-red-500/80 rounded-2xl p-7 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-red-950/80 border border-red-500/50 flex items-center justify-center text-red-400 shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Confirmar Formatação Completa</h3>
+          <p class="text-xs text-slate-400">Esta ação é irreversível</p>
+        </div>
+      </div>
+
+      <div class="bg-[#172033] border border-red-900/40 rounded-xl p-3.5 text-xs text-red-200 leading-relaxed">
+        TODOS os dados contidos no <strong class="text-white" id="modal-disk-name">Disco 0 (NVMe Samsung 512GB)</strong> serão permanentemente eliminados. O particionamento GPT será recriado e o Windows 11 Pro será instalado.
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button onclick="fecharModalConfirmacao()" class="bg-[#1E2A42] hover:bg-[#26344F] text-slate-300 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer">
+          Cancelar
+        </button>
+        <button onclick="iniciarExecucaoReal()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg text-xs font-bold cursor-pointer shadow-lg shadow-red-600/30">
+          Sim, Apagar e Instalar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CMD SIMULADO -->
+  <div id="modal-cmd" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-[#0c0c0c] border border-slate-700 rounded-xl max-w-2xl w-full font-mono text-xs text-slate-200 shadow-2xl overflow-hidden">
+      <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+        <span class="text-slate-400">Prompt de Comando do Windows PE - X:\Windows\System32\cmd.exe</span>
+        <button onclick="fecharCmdModal()" class="text-slate-400 hover:text-white cursor-pointer">&times;</button>
+      </div>
+      <div class="p-4 space-y-2 h-64 overflow-y-auto">
+        <p>Microsoft Windows [Versão 10.0.26100.1742]</p>
+        <p>(c) Microsoft Corporation. Todos os direitos reservados.</p>
+        <p class="text-emerald-400 mt-2">X:\Windows\system32&gt; wmic diskdrive get model,size,interfacetype</p>
+        <p class="text-slate-300">Model &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Size &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; InterfaceType<br>
+        SAMSUNG MZVLB512HBJQ-000L7 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 512110190592 &nbsp; SCSI (NVMe)<br>
+        SanDisk Ultra USB 3.0 USB Device &nbsp; &nbsp; 32014925824 &nbsp; &nbsp;USB</p>
+        <p class="text-emerald-400 mt-2">X:\Windows\system32&gt; echo %OMNI_DADOS%</p>
+        <p class="text-slate-300">D:\</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT: LÓGICA E ESTADO DA INTERFACE -->
+  <script>
+    // Estado do Wizard
+    let etapaAtual = 0;
+    let discoSelecionado = 0;
+    let imagemSelecionada = 0;
+    let edicaoSelecionada = 1; // Pro por padrão
+    let modoSelecionado = 'intune'; // intune, bypass, zerotouch
+    let driverLenovoMarcado = true;
+    let ntpMarcado = true;
+    let ativacaoMarcada = true;
+    let chaveVisivel = false;
+    let executando = false;
+    let progresso = 0;
+    let cronometroInterval = null;
+    let segundosExecutando = 0;
+
+    const chaveOriginal = "RGHJN-4X8Y8-PRTTM-6W868-XW3F4";
+
+    const etapasConfig = [
+      { id: 0, tit: "Disco de destino", sub: "Seleção e particionamento" },
+      { id: 1, tit: "Imagem e edição", sub: "WIM/ESD + índice DISM" },
+      { id: 2, tit: "Modo de implantação", sub: "Intune, Bypass ou Zero-Touch" },
+      { id: 3, tit: "Drivers sob demanda", sub: "Injeção de drivers e teclado" },
+      { id: 4, tit: "Pós-instalação", sub: "NTP e ativação do Windows" },
+      { id: 5, tit: "Execução e console", sub: "Resumo e terminal ao vivo" }
+    ];
+
+    function renderStepsNav() {
+      const nav = document.getElementById('steps-nav');
+      nav.innerHTML = etapasConfig.map((etp, idx) => {
+        const ativo = idx === etapaAtual;
+        const concluido = idx < etapaAtual;
+        
+        let circClass = "bg-[#1E2A42] border-[#26344F] text-[#8C9AB3]";
+        let titClass = "text-[#8C9AB3]";
+        let containerBg = "hover:bg-[#141E33] transparent";
+
+        if (concluido) {
+          circClass = "bg-emerald-500 border-emerald-500 text-white font-bold";
+          titClass = "text-slate-200 font-semibold";
+        } else if (ativo) {
+          circClass = "accent-gradient border-blue-500 text-white font-bold shadow-md shadow-blue-500/30";
+          titClass = "text-white font-bold";
+          containerBg = "bg-[#16264A] border border-blue-600/30";
+        }
+
+        return `
+          <button onclick="mudarEtapa(${idx})" ${executando ? 'disabled' : ''} class="w-full text-left p-2.5 rounded-xl transition-all flex items-center gap-3 cursor-pointer ${containerBg}">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 border ${circClass}">
+              ${concluido ? '✓' : (idx + 1)}
+            </div>
+            <div class="truncate">
+              <div class="text-xs leading-tight ${titClass}">${etp.tit}</div>
+              <div class="text-[10px] text-slate-500 truncate">${etp.sub}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function mudarEtapa(novaEtapa) {
+      if (executando) return;
+      if (novaEtapa < 0 || novaEtapa >= etapasConfig.length) return;
+      etapaAtual = novaEtapa;
+      renderStepsNav();
+      renderStepContent();
+      atualizarBotoesRodape();
+    }
+
+    function atualizarBotoesRodape() {
+      const btnVoltar = document.getElementById('btn-voltar');
+      const btnProximo = document.getElementById('btn-proximo');
+      const btnIniciar = document.getElementById('btn-iniciar');
+
+      btnVoltar.disabled = etapaAtual === 0 || executando;
+      
+      if (etapaAtual === 5) {
+        btnProximo.classList.add('hidden');
+        if (!executando && progresso < 100) {
+          btnIniciar.classList.remove('hidden');
+        } else {
+          btnIniciar.classList.add('hidden');
+        }
+      } else {
+        btnProximo.classList.remove('hidden');
+        btnIniciar.classList.add('hidden');
+      }
+    }
+
+    // Renderizador das telas de cada etapa
+    function renderStepContent() {
+      const container = document.getElementById('step-container');
+      const breadcrumb = document.getElementById('step-breadcrumb');
+      const title = document.getElementById('step-title');
+      const actionBadge = document.getElementById('step-action-badge');
+
+      breadcrumb.textContent = `Etapa ${etapaAtual + 1} de 6 • ${etapasConfig[etapaAtual].tit}`;
+      actionBadge.innerHTML = '';
+
+      switch (etapaAtual) {
+        case 0: // ETAPA 1 - DISCO
+          title.textContent = "Selecione o disco de destino";
+          actionBadge.innerHTML = `
+            <button onclick="alert('Lista de discos físicos atualizada via WMI/MSFT_Disk.')" class="bg-[#1E2A42] hover:bg-[#26344F] border border-[#26344F] text-slate-300 px-3 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+              <span>↻</span> Atualizar Discos
+            </button>
+          `;
+          container.innerHTML = `
+            <div class="space-y-4">
+              <p class="text-xs text-[#8C9AB3]">
+                O disco escolhido será totalmente limpo e reparticionado. O pendrive de boot é ocultado automaticamente por segurança.
+              </p>
+
+              <!-- LISTA DE DISCOS -->
+              <div class="space-y-2.5">
+                <!-- Disco 0 (NVMe) -->
+                <div onclick="selecionarDisco(0)" class="card p-3.5 border-2 ${discoSelecionado === 0 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer transition-all flex items-center justify-between">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-[#1E2A42] flex items-center justify-center text-blue-400 font-mono font-bold text-sm">
+                      D0
+                    </div>
+                    <div>
+                      <div class="text-sm font-semibold text-white flex items-center gap-2">
+                        Disco 0 • NVMe Samsung MZVLB512HBJQ-000L7
+                        <span class="bg-blue-900/60 text-blue-300 text-[10px] px-2 py-0.5 rounded border border-blue-700/50">Recomendado</span>
+                      </div>
+                      <div class="text-xs text-[#8C9AB3] mt-0.5">
+                        476.9 GB &nbsp;•&nbsp; Barramento NVMe &nbsp;•&nbsp; Mídia SSD &nbsp;•&nbsp; Tabela Atual: GPT
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-base font-bold text-blue-400 font-mono">476.9 GB</span>
+                  </div>
+                </div>
+
+                <!-- Disco 1 (SATA Secundário) -->
+                <div onclick="selecionarDisco(1)" class="card p-3.5 border-2 ${discoSelecionado === 1 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer transition-all flex items-center justify-between">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-[#1E2A42] flex items-center justify-center text-slate-400 font-mono font-bold text-sm">
+                      D1
+                    </div>
+                    <div>
+                      <div class="text-sm font-semibold text-white">
+                        Disco 1 • Seagate Barracuda ST1000LM048
+                      </div>
+                      <div class="text-xs text-[#8C9AB3] mt-0.5">
+                        931.5 GB &nbsp;•&nbsp; Barramento SATA &nbsp;•&nbsp; Mídia HDD &nbsp;•&nbsp; Tabela Atual: GPT
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-base font-bold text-slate-300 font-mono">931.5 GB</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Aviso de disco oculto -->
+              <div class="text-[11px] text-amber-400/90 bg-amber-950/30 border border-amber-800/40 px-3 py-2 rounded-lg flex items-center gap-2">
+                <span>🛡️</span>
+                <span><strong>Ocultos por segurança:</strong> Disco 2 (Pendrive OmniDeploy SanDisk Ultra 32GB em D:).</span>
+              </div>
+
+              <!-- MAPA VISUAL DE PARTIÇÕES QUE SERÁ CRIADO -->
+              <div class="bg-[#172033] border border-[#26344F] rounded-xl p-4 mt-2">
+                <div class="text-[11px] font-semibold text-[#8C9AB3] uppercase tracking-wider mb-1">
+                  Layout de Partições Planejado (Modo UEFI GPT)
+                </div>
+                <p class="text-xs text-slate-400 mb-3">
+                  Tabela GPT particionada automaticamente: EFI (FAT32) + MSR + Windows (NTFS) + WinRE (Recuperação).
+                </p>
+
+                <!-- Barra Proporcional de Partições -->
+                <div class="grid grid-cols-12 gap-1.5 h-14">
+                  <!-- EFI -->
+                  <div class="col-span-1 bg-amber-500/90 rounded-lg p-2 text-white flex flex-col justify-center">
+                    <div class="text-[11px] font-bold">EFI</div>
+                    <div class="text-[9px] text-amber-100 opacity-90">100 MB</div>
+                  </div>
+                  <!-- MSR -->
+                  <div class="col-span-1 bg-slate-600 rounded-lg p-2 text-white flex flex-col justify-center">
+                    <div class="text-[11px] font-bold">MSR</div>
+                    <div class="text-[9px] text-slate-200 opacity-80">16 MB</div>
+                  </div>
+                  <!-- Windows (C:) -->
+                  <div class="col-span-8 bg-blue-600 rounded-lg p-2 text-white flex flex-col justify-center shadow-inner">
+                    <div class="text-xs font-bold flex items-center gap-2">
+                      <span>Windows (C:)</span>
+                      <span class="text-[10px] bg-blue-800/60 px-1.5 rounded">NTFS</span>
+                    </div>
+                    <div class="text-[10px] text-blue-100 opacity-90">
+                      ${discoSelecionado === 0 ? '475.8 GB (Restante do Disco)' : '930.4 GB (Restante do Disco)'}
+                    </div>
+                  </div>
+                  <!-- WinRE -->
+                  <div class="col-span-2 bg-emerald-600 rounded-lg p-2 text-white flex flex-col justify-center">
+                    <div class="text-[11px] font-bold">WinRE</div>
+                    <div class="text-[9px] text-emerald-100 opacity-90">1024 MB</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 1: // ETAPA 2 - IMAGEM E EDIÇÃO
+          title.textContent = "Imagem e edição do Windows";
+          container.innerHTML = `
+            <div class="grid grid-cols-12 gap-5 h-full">
+              <!-- Coluna 1: Arquivos WIM/ESD -->
+              <div class="col-span-5 flex flex-col gap-2">
+                <span class="text-[11px] font-semibold text-[#8C9AB3] uppercase tracking-wider">
+                  Arquivo de Imagem (01_ISOs_Imagens\)
+                </span>
+                <div class="card p-3 border-2 border-blue-500 bg-[#142449] cursor-pointer">
+                  <div class="flex items-start gap-2.5">
+                    <span class="bg-blue-900 text-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-0.5">WIM</span>
+                    <div>
+                      <div class="text-xs font-bold text-white leading-snug">
+                        Win11_Pro_26H2_x64_PT-BR_Pro_Ent_EDU_N.wim
+                      </div>
+                      <div class="text-[11px] text-slate-400 mt-1">Tamanho: 7.71 GB</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-[11px] text-slate-400 bg-[#172033] p-2.5 rounded-lg border border-[#26344F] mt-2">
+                  ℹ️ Arquivo extraído diretamente da ISO oficial do projeto e pronto para aplicação com DISM.
+                </div>
+              </div>
+
+              <!-- Coluna 2: Edições Internas -->
+              <div class="col-span-7 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-semibold text-[#8C9AB3] uppercase tracking-wider">
+                    Edição do Windows (Índice DISM)
+                  </span>
+                  <span class="text-[11px] text-blue-400">4 edições detectadas</span>
+                </div>
+
+                <div class="space-y-2 overflow-y-auto max-h-[360px] pr-1">
+                  <!-- Home -->
+                  <div onclick="selecionarEdicao(0)" class="card p-2.5 border-2 ${edicaoSelecionada === 0 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded bg-[#1E2A42] flex items-center justify-center font-bold text-slate-300 text-xs">1</div>
+                      <div>
+                        <div class="text-xs font-semibold text-white">Windows 11 Home Single Language</div>
+                        <div class="text-[10px] text-slate-400">Edição doméstica offline</div>
+                      </div>
+                    </div>
+                    <span class="text-[11px] text-slate-400">16.2 GB</span>
+                  </div>
+
+                  <!-- Pro (Padrão) -->
+                  <div onclick="selecionarEdicao(1)" class="card p-2.5 border-2 ${edicaoSelecionada === 1 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow">2</div>
+                      <div>
+                        <div class="text-xs font-semibold text-white flex items-center gap-2">
+                          Windows 11 Pro
+                          <span class="bg-blue-900/80 text-blue-200 text-[9px] px-1.5 py-0.2 rounded font-bold">Recomendado</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400">Domínio, BitLocker, Hyper-V, Intune / Autopilot</div>
+                      </div>
+                    </div>
+                    <span class="text-[11px] text-blue-300 font-semibold">16.4 GB</span>
+                  </div>
+
+                  <!-- Enterprise -->
+                  <div onclick="selecionarEdicao(2)" class="card p-2.5 border-2 ${edicaoSelecionada === 2 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded bg-[#1E2A42] flex items-center justify-center font-bold text-slate-300 text-xs">3</div>
+                      <div>
+                        <div class="text-xs font-semibold text-white">Windows 11 Enterprise</div>
+                        <div class="text-[10px] text-slate-400">Grandes corporações e licenciamento por volume</div>
+                      </div>
+                    </div>
+                    <span class="text-[11px] text-slate-400">16.4 GB</span>
+                  </div>
+
+                  <!-- Education -->
+                  <div onclick="selecionarEdicao(3)" class="card p-2.5 border-2 ${edicaoSelecionada === 3 ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded bg-[#1E2A42] flex items-center justify-center font-bold text-slate-300 text-xs">4</div>
+                      <div>
+                        <div class="text-xs font-semibold text-white">Windows 11 Education</div>
+                        <div class="text-[10px] text-slate-400">Ambientes acadêmicos e laboratórios</div>
+                      </div>
+                    </div>
+                    <span class="text-[11px] text-slate-400">16.3 GB</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 2: // ETAPA 3 - MODO DE IMPLANTAÇÃO
+          title.textContent = "Modo de implantação";
+          container.innerHTML = `
+            <div class="space-y-3.5 max-w-3xl">
+              <p class="text-xs text-[#8C9AB3]">
+                Define como o Windows se comportará durante o primeiro boot (experiência OOBE).
+              </p>
+
+              <!-- Opção 1: Corporativo / Intune -->
+              <div onclick="selecionarModo('intune')" class="card p-4 border-2 ${modoSelecionado === 'intune' ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer transition-all flex items-start gap-4">
+                <input type="radio" name="modo" ${modoSelecionado === 'intune' ? 'checked' : ''} class="mt-1 accent-blue-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-sm font-bold text-white">Corporativo / Intune</span>
+                    <span class="bg-blue-900/60 text-blue-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-700/50">
+                      Entra ID • Windows Autopilot
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    OOBE limpo, sem injeção de unattend de usuário. O notebook inicia na tela de boas-vindas da Microsoft, pronto para autenticação corporativa com e-mail institucional e provisionamento automático pelo Intune.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Opção 2: Bypass / Conta Local -->
+              <div onclick="selecionarModo('bypass')" class="card p-4 border-2 ${modoSelecionado === 'bypass' ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer transition-all flex items-start gap-4">
+                <input type="radio" name="modo" ${modoSelecionado === 'bypass' ? 'checked' : ''} class="mt-1 accent-blue-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-sm font-bold text-white">Bypass / Conta Local Offline</span>
+                    <span class="bg-amber-900/60 text-amber-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-700/50">
+                      unattend_bypass.xml
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    Injeta o template de bypass em <code class="font-mono text-amber-300">C:\\Windows\\Panther\\unattend.xml</code>. Remove a exigência de conectar ao Wi-Fi e de logar com conta Microsoft (BypassNRO), permitindo criar um usuário local personalizado.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Opção 3: Zero-Touch Bancada -->
+              <div onclick="selecionarModo('zerotouch')" class="card p-4 border-2 ${modoSelecionado === 'zerotouch' ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer transition-all flex items-start gap-4">
+                <input type="radio" name="modo" ${modoSelecionado === 'zerotouch' ? 'checked' : ''} class="mt-1 accent-blue-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-sm font-bold text-white">Zero-Touch Bancada</span>
+                    <span class="bg-emerald-900/60 text-emerald-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-700/50">
+                      unattend_zerotouch.xml
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    Automatização total de bancada. Cria o usuário local <strong class="text-emerald-400 font-mono">SuporteLocal</strong> com privilégios de Administrador, pula todas as telas do OOBE e efetua logon automático direto no Desktop.
+                  </p>
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 3: // ETAPA 4 - DRIVERS
+          title.textContent = "Drivers sob demanda";
+          container.innerHTML = `
+            <div class="space-y-4">
+              <!-- Banner de Compatibilidade -->
+              <div class="bg-blue-950/40 border border-blue-800/50 rounded-xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">🔍</span>
+                  <div>
+                    <div class="text-xs font-bold text-blue-200">Hardware Detectado: Lenovo ThinkPad</div>
+                    <div class="text-[11px] text-slate-400">O driver de correção do teclado ThinkPad ABNT foi destacado e pré-selecionado automaticamente.</div>
+                  </div>
+                </div>
+                <button onclick="alert('Pasta 02_Drivers reescaneada.')" class="bg-[#1E2A42] hover:bg-[#26344F] text-slate-300 text-xs px-2.5 py-1 rounded cursor-pointer border border-[#26344F]">
+                  Reescanear
+                </button>
+              </div>
+
+              <!-- Lista de Drivers -->
+              <div class="space-y-2.5">
+                <!-- Lenovo ThinkPad Teclado -->
+                <div onclick="toggleDriverLenovo()" class="card p-3.5 border-2 ${driverLenovoMarcado ? 'border-blue-500 bg-[#142449]' : 'border-[#26344F]'} cursor-pointer flex items-center justify-between transition-all">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" ${driverLenovoMarcado ? 'checked' : ''} class="w-4 h-4 accent-blue-500 cursor-pointer">
+                    <div>
+                      <div class="text-sm font-bold text-white flex items-center gap-2">
+                        Lenovo_ThinkPad_Teclado
+                        <span class="bg-emerald-950 text-emerald-300 border border-emerald-800/60 text-[10px] px-2 py-0.5 rounded font-semibold">
+                          Recomendado para este hardware
+                        </span>
+                      </div>
+                      <div class="text-xs text-slate-400 mt-0.5">
+                        1 script de correção ABNT2 (Scancode Map no Registro) • Aplicado offline na imagem
+                      </div>
+                    </div>
+                  </div>
+                  <span class="text-xs font-mono text-emerald-400 font-semibold">Ativo</span>
+                </div>
+
+                <!-- Driver Exemplo Genérico de Rede -->
+                <div class="card p-3.5 border border-[#26344F] opacity-70 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" disabled class="w-4 h-4">
+                    <div>
+                      <div class="text-sm font-semibold text-slate-300">Rede_Intel_WiFi_Ethernet</div>
+                      <div class="text-xs text-slate-500">Nenhum arquivo adicional detectado nesta pasta (0 arquivos .inf)</div>
+                    </div>
+                  </div>
+                  <span class="text-xs text-slate-500">Vazio</span>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-[#8C9AB3]">
+                💡 Para adicionar novos pacotes de drivers (Dell, HP, som, rede), basta colar as pastas com arquivos <code class="font-mono text-slate-300">.inf</code> dentro de <code class="font-mono text-slate-300">02_Drivers\</code> no pendrive.
+              </p>
+            </div>
+          `;
+          break;
+
+        case 4: // ETAPA 5 - PÓS-INSTALAÇÃO
+          title.textContent = "Scripts pós-instalação";
+          container.innerHTML = `
+            <div class="space-y-4 max-w-3xl">
+              <p class="text-xs text-[#8C9AB3]">
+                Os itens habilitados serão compilados no arquivo <code class="font-mono text-blue-300">C:\\Windows\\Setup\\Scripts\\SetupComplete.cmd</code> e disparados na finalização do setup.
+              </p>
+
+              <!-- Checkbox NTP -->
+              <div class="card p-4 border border-[#26344F] flex items-start gap-3">
+                <input id="chk-ntp" type="checkbox" ${ntpMarcado ? 'checked' : ''} onchange="ntpMarcado = this.checked" class="mt-1 w-4 h-4 accent-blue-500 cursor-pointer">
+                <div class="flex-1">
+                  <label for="chk-ntp" class="text-sm font-bold text-white cursor-pointer">
+                    Sincronização de Horário Oficial (NTP)
+                  </label>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Configura fuso horário para <code class="font-mono text-slate-300">"E. South America Standard Time"</code> (Brasília UTC-3), habilita o serviço <code class="font-mono text-slate-300">w32time</code> e força o resync com <strong class="text-blue-300">a.ntp.br</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Checkbox Ativação -->
+              <div class="card p-4 border border-[#26344F] space-y-3">
+                <div class="flex items-start gap-3">
+                  <input id="chk-ativacao" type="checkbox" ${ativacaoMarcada ? 'checked' : ''} onchange="ativacaoMarcada = this.checked; renderStepContent();" class="mt-1 w-4 h-4 accent-blue-500 cursor-pointer">
+                  <div class="flex-1">
+                    <label for="chk-ativacao" class="text-sm font-bold text-white cursor-pointer">
+                      Ativação Automática do Windows 11 Pro
+                    </label>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Executa <code class="font-mono text-slate-300">slmgr.vbs /ipk &lt;CHAVE&gt;</code> e <code class="font-mono text-slate-300">slmgr.vbs /ato</code> silenciosamente ao término da instalação.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Painel da Chave -->
+                <div class="${ativacaoMarcada ? 'block' : 'hidden'} pl-7 pt-2 border-t border-[#26344F]/60 space-y-3">
+                  <div class="text-xs font-semibold text-slate-300">Chave de Licença Padrão (OmniDeploy)</div>
+                  
+                  <div class="flex items-center gap-2 max-w-lg">
+                    <div class="flex-1 bg-[#172033] border border-[#26344F] rounded-lg px-3 py-2 font-mono text-sm tracking-wider font-bold text-amber-300">
+                      ${chaveVisivel ? chaveOriginal : 'RGHJN-•••••-•••••-•••••-XW3F4'}
+                    </div>
+                    <button onclick="toggleChaveVisivel()" class="bg-[#1E2A42] hover:bg-[#26344F] border border-[#26344F] text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                      ${chaveVisivel ? 'Ocultar' : 'Revelar'}
+                    </button>
+                  </div>
+                  
+                  <div class="text-[11px] text-emerald-400 flex items-center gap-1.5">
+                    <span>✓</span> Chave recuperada com sucesso do arquivo <code class="font-mono">chave win.txt</code> da preparação.
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 5: // ETAPA 6 - EXECUÇÃO E CONSOLE AO VIVO
+          title.textContent = executando || progresso === 100 ? "Execução e terminal em tempo real" : "Resumo da implantação";
+          
+          if (!executando && progresso === 0) {
+            // TELA DE RESUMO
+            container.innerHTML = `
+              <div class="space-y-4">
+                <div class="bg-blue-950/30 border border-blue-800/40 rounded-xl p-3.5 text-xs text-blue-200">
+                  ℹ️ Revise todas as configurações antes de disparar. Ao clicar em <strong>"Iniciar Implantação"</strong>, o particionamento será executado e o Windows será gravado na unidade de destino.
+                </div>
+
+                <!-- TABELA DE RESUMO -->
+                <div class="card p-4 border border-[#26344F] space-y-2.5 text-xs">
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Equipamento Destino:</span>
+                    <span class="font-semibold text-white">Lenovo ThinkPad T14 Gen 2 (S/N: PF3X9K8M)</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Disco Selecionado:</span>
+                    <span class="font-semibold text-blue-400">Disco ${discoSelecionado} (${discoSelecionado === 0 ? 'Samsung NVMe 476.9 GB' : 'Seagate 931.5 GB'})</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Esquema de Partição:</span>
+                    <span class="font-semibold text-white">UEFI GPT (EFI 100MB + MSR 16MB + Windows + WinRE)</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Imagem e Edição:</span>
+                    <span class="font-semibold text-white">Win11_Pro_26H2_x64 &rarr; Índice ${edicaoSelecionada + 1} (${['Home SL', 'Windows 11 Pro', 'Enterprise', 'Education'][edicaoSelecionada]})</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Modo de Implantação:</span>
+                    <span class="font-semibold text-amber-300 uppercase">${modoSelecionado}</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-[#26344F]/50">
+                    <span class="text-[#8C9AB3]">Drivers Sob Demanda:</span>
+                    <span class="font-semibold text-emerald-400">${driverLenovoMarcado ? 'Lenovo_ThinkPad_Teclado (ABNT2)' : 'Nenhum'}</span>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span class="text-[#8C9AB3]">Pós-Instalação:</span>
+                    <span class="font-semibold text-white">NTP (${ntpMarcado ? 'a.ntp.br' : 'Não'}) | Ativação (${ativacaoMarcada ? 'Sim, chave OmniDeploy' : 'Não'})</span>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-red-950/30 border border-red-800/40 rounded-xl text-xs text-red-300 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>O processo executará: <code class="font-mono text-red-200">diskpart &rarr; dism /Apply-Image &rarr; bcdboot &rarr; dism /Add-Driver &rarr; SetupComplete.cmd</code></span>
+                </div>
+              </div>
+            `;
+          } else {
+            // TELA DE CONSOLE AO VIVO
+            container.innerHTML = `
+              <div class="space-y-3">
+                <!-- Barra de Progresso Superior -->
+                <div class="bg-[#172033] border border-[#26344F] rounded-xl p-3.5 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span id="current-phase-text" class="font-bold text-white">
+                      ${progresso < 100 ? 'Executando implantação...' : '✓ Implantação concluída com sucesso!'}
+                    </span>
+                    <div class="flex items-center gap-4 font-mono">
+                      <span class="text-slate-400">Tempo: <span id="time-counter" class="text-slate-200">00:00</span></span>
+                      <span id="progress-percentage" class="text-blue-400 font-bold text-sm">${progresso}%</span>
+                    </div>
+                  </div>
+                  <div class="w-full bg-[#1E2A42] h-3 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="accent-gradient h-full transition-all duration-300" style="width: ${progresso}%"></div>
+                  </div>
+                </div>
+
+                <!-- Terminal Embutido -->
+                <div class="bg-[#060A14] border border-[#26344F] rounded-xl overflow-hidden font-mono text-xs flex flex-col h-[320px]">
+                  <div class="bg-[#0B1222] px-3.5 py-1.5 border-b border-[#26344F] flex items-center justify-between text-[11px] text-slate-400">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span class="ml-1 text-slate-300">Console ao Vivo — OmniDeploy (STDIO)</span>
+                    </div>
+                    <span class="text-slate-500">OmniDeploy Deployment Engine v1.0</span>
+                  </div>
+
+                  <div id="terminal-logs" class="p-3.5 overflow-y-auto space-y-1 flex-1 custom-scroll text-slate-300">
+                    <!-- Logs entram aqui -->
+                  </div>
+                </div>
+
+                <!-- Botão de Reinicialização ao Finalizar -->
+                ${progresso === 100 ? `
+                  <div class="flex items-center justify-between bg-emerald-950/40 border border-emerald-600/50 p-3.5 rounded-xl">
+                    <div class="text-xs text-emerald-300 font-medium">
+                      ✓ Windows 11 instalado e configurado com sucesso! Remova o pendrive e reinicie para iniciar o OOBE.
+                    </div>
+                    <button onclick="alert('No WinPE real, este botão chama: wpeutil reboot')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer shadow-lg shadow-emerald-600/30">
+                      Reiniciar Agora
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }
+          break;
+      }
+    }
+
+    function selecionarDisco(d) {
+      discoSelecionado = d;
+      renderStepContent();
+    }
+
+    function selecionarEdicao(e) {
+      edicaoSelecionada = e;
+      renderStepContent();
+    }
+
+    function selecionarModo(m) {
+      modoSelecionado = m;
+      renderStepContent();
+    }
+
+    function toggleDriverLenovo() {
+      driverLenovoMarcado = !driverLenovoMarcado;
+      renderStepContent();
+    }
+
+    function toggleChaveVisivel() {
+      chaveVisivel = !chaveVisivel;
+      renderStepContent();
+    }
+
+    function copiarSerial() {
+      const serial = document.getElementById('serial-number').textContent;
+      navigator.clipboard.writeText(serial).catch(() => {});
+      const toast = document.getElementById('toast-msg');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function abrirModalConfirmacao() {
+      const modal = document.getElementById('modal-confirmacao');
+      document.getElementById('modal-disk-name').textContent = discoSelecionado === 0 
+        ? "Disco 0 (Samsung NVMe 476.9 GB)" 
+        : "Disco 1 (Seagate SATA 931.5 GB)";
+      modal.classList.remove('hidden');
+    }
+
+    function fecharModalConfirmacao() {
+      document.getElementById('modal-confirmacao').classList.add('hidden');
+    }
+
+    function abrirCmdModal() {
+      document.getElementById('modal-cmd').classList.remove('hidden');
+    }
+
+    function fecharCmdModal() {
+      document.getElementById('modal-cmd').classList.add('hidden');
+    }
+
+    // SIMULAÇÃO DO PROCESSO REAL DE IMPLANTAÇÃO
+    function iniciarExecucaoReal() {
+      fecharModalConfirmacao();
+      executando = true;
+      progresso = 0;
+      segundosExecutando = 0;
+      atualizarBotoesRodape();
+      renderStepContent();
+
+      const terminal = document.getElementById('terminal-logs');
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-percentage');
+      const phaseText = document.getElementById('current-phase-text');
+      const timerText = document.getElementById('time-counter');
+
+      cronometroInterval = setInterval(() => {
+        segundosExecutando++;
+        const mins = String(Math.floor(segundosExecutando / 60)).padStart(2, '0');
+        const secs = String(segundosExecutando % 60).padStart(2, '0');
+        if (timerText) timerText.textContent = `${mins}:${secs}`;
+      }, 1000);
+
+      function log(msg, color = 'text-slate-300') {
+        const time = new Date().toLocaleTimeString();
+        const p = document.createElement('div');
+        p.className = `leading-relaxed ${color}`;
+        p.innerHTML = `<span class="text-slate-600">[${time}]</span> ${msg}`;
+        terminal.appendChild(p);
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+
+      function updateP(pct, phase) {
+        progresso = pct;
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (progressText) progressText.textContent = pct + '%';
+        if (phaseText) phaseText.textContent = phase;
+      }
+
+      // Roteiro de comandos reais executados pelo OmniDeploy
+      log("═══ INÍCIO DA IMPLANTAÇÃO OmniDeploy v1.0 ═══", "text-blue-400 font-bold");
+      log(`Disco de destino selecionado: Disco ${discoSelecionado}`, "text-slate-300");
+      log("Modo de boot detectado: UEFI (GPT)", "text-slate-300");
+      log("Imagem: Win11_Pro_26H2_x64_PT-BR_Pro_Ent_EDU_N.wim (Índice 2: Windows 11 Pro)", "text-slate-300");
+
+      setTimeout(() => {
+        updateP(5, "[1/8] Particionando disco com diskpart...");
+        log("&gt; diskpart /s X:\\Temp\\omni_diskpart.txt", "text-cyan-400 font-mono");
+        log("diskpart: select disk 0 & clean & convert gpt", "text-slate-400");
+        log("diskpart: create partition efi size=100 & format quick fs=fat32", "text-slate-400");
+        log("diskpart: create partition msr size=16", "text-slate-400");
+        log("diskpart: create partition primary & shrink minimum=1024 & format quick fs=ntfs label=Windows", "text-slate-400");
+        log("diskpart: create partition primary & format quick fs=ntfs label=Recovery & set id=de94bba4...", "text-slate-400");
+        log("✓ Disco particionado com sucesso. Unidades temporárias atribuídas: W: (Windows), S: (EFI), R: (WinRE)", "text-emerald-400");
+      }, 1000);
+
+      setTimeout(() => {
+        updateP(15, "[2/8] Aplicando imagem do Windows via DISM...");
+        log("&gt; dism /Apply-Image /ImageFile:D:\\01_ISOs_Imagens\\Win11_Pro.wim /Index:2 /ApplyDir:W:\\", "text-cyan-400 font-mono");
+        log("Progresso DISM: [==========          25.0%          ]", "text-slate-400");
+      }, 2500);
+
+      setTimeout(() => {
+        updateP(45, "[2/8] Descompactando e aplicando arquivos de sistema...");
+        log("Progresso DISM: [==================== 68.4%          ]", "text-slate-400");
+      }, 4500);
+
+      setTimeout(() => {
+        updateP(78, "[2/8] Finalizando aplicação da imagem...");
+        log("Progresso DISM: [==================================== 100.0% ]", "text-slate-400");
+        log("✓ Imagem do Windows aplicada com êxito na partição W:\\", "text-emerald-400");
+      }, 6500);
+
+      setTimeout(() => {
+        updateP(82, "[3/8] Configurando ambiente de recuperação WinRE...");
+        log("Copiando Winre.wim para R:\\Recovery\\WindowsRE\\Winre.wim...", "text-slate-400");
+        log("&gt; reagentc /Setreimage /Path R:\\Recovery\\WindowsRE /Target W:\\Windows", "text-cyan-400 font-mono");
+        log("✓ WinRE registrado e vinculado ao BCD.", "text-emerald-400");
+      }, 7800);
+
+      setTimeout(() => {
+        updateP(86, "[4/8] Gravando inicialização UEFI (bcdboot)...");
+        log("&gt; bcdboot W:\\Windows /s S: /f UEFI /l pt-BR", "text-cyan-400 font-mono");
+        log("✓ Arquivos de inicialização UEFI criados com sucesso na partição EFI.", "text-emerald-400");
+      }, 9000);
+
+      setTimeout(() => {
+        updateP(90, "[5/8] Injetando drivers sob demanda...");
+        if (driverLenovoMarcado) {
+          log("&gt; Injetando Lenovo_ThinkPad_Teclado...", "text-slate-300");
+          log("&gt; Script TecladoThinkpad_ABNT.bat copiado para W:\\Windows\\Setup\\Scripts\\OmniDeploy\\Drivers\\", "text-slate-400");
+        }
+        log("✓ Drivers e scripts de hardware processados.", "text-emerald-400");
+      }, 10200);
+
+      setTimeout(() => {
+        updateP(94, "[6/8] Aplicando ajustes offline no Registro do Windows...");
+        log("&gt; reg load HKLM\\OMNI_OFF_SYSTEM W:\\Windows\\System32\\config\\SYSTEM", "text-cyan-400 font-mono");
+        log("Injetando BypassTPMCheck, BypassSecureBootCheck, BypassRAMCheck...", "text-slate-400");
+        log("Aplicando Scancode Map do teclado ABNT no Registro offline...", "text-slate-400");
+        log("&gt; reg unload HKLM\\OMNI_OFF_SYSTEM", "text-cyan-400 font-mono");
+        log("✓ Registro offline configurado com sucesso.", "text-emerald-400");
+      }, 11400);
+
+      setTimeout(() => {
+        updateP(97, "[7/8] Injetando unattend.xml e políticas de setup...");
+        log(`Injetando arquivo unattend para modo ${modoSelecionado.toUpperCase()} em W:\\Windows\\Panther\\unattend.xml`, "text-slate-300");
+        log("✓ Unattend configurado.", "text-emerald-400");
+      }, 12500);
+
+      setTimeout(() => {
+        updateP(99, "[8/8] Gerando W:\\Windows\\Setup\\Scripts\\SetupComplete.cmd...");
+        log("Adicionando sincronização de horário NTP (a.ntp.br)...", "text-slate-400");
+        log("Adicionando chamada silenciosa de ativação (slmgr.vbs)...", "text-slate-400");
+        log("✓ SetupComplete.cmd gerado e protegido.", "text-emerald-400");
+      }, 13500);
+
+      setTimeout(() => {
+        clearInterval(cronometroInterval);
+        updateP(100, "Concluído!");
+        log("═══ IMPLANTAÇÃO CONCLUÍDA COM SUCESSO! ═══", "text-emerald-400 font-bold");
+        log("Log da sessão salvo em: D:\\Logs\\20261115_PF3X9K8M.log", "text-blue-300");
+        executando = false;
+        renderStepContent();
+        atualizarBotoesRodape();
+      }, 14500);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Inicialização ao carregar
+    window.addEventListener('DOMContentLoaded', () => {
+      renderStepsNav();
+      renderStepContent();
+      atualizarBotoesRodape();
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,77 @@
+# ==============================================================================
+# OmniDeploy v1.0 - .gitignore
+# Repositório Oficial - Desenvolvido por Ygor Paes
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Arquivos Pesados e Imagens de Disco do Windows
+# ------------------------------------------------------------------------------
+*.wim
+*.esd
+*.iso
+*.swm
+*.vhd
+*.vhdx
+
+# ------------------------------------------------------------------------------
+# Pasta de Build e Staging Local
+# Bloqueia a pasta Build contendo imagens de boot, dados e ferramentas locais
+# ------------------------------------------------------------------------------
+Build/
+build/
+[Bb]uild/
+
+# ------------------------------------------------------------------------------
+# Pastas e Arquivos de Compilação (.NET / C# / Visual Studio / MSBuild)
+# ------------------------------------------------------------------------------
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+*.ide
+*.sln.docstates
+[Bb]in/
+[Oo]bj/
+
+# ------------------------------------------------------------------------------
+# Arquivos de Configuração com Chaves e Dados Sensíveis
+# O arquivo config.json real deve ser mantido localmente (use config.example.json)
+# ------------------------------------------------------------------------------
+04_Config/config.json
+**/04_Config/config.json
+config.json
+
+# ------------------------------------------------------------------------------
+# Projeto de Apresentação e Vídeos (Node.js / Remotion)
+# ------------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+apresentaçao do projeto/node_modules/
+apresentaçao do projeto/out/
+*.mp4
+.remotion/
+package-lock.json.backup
+
+# ------------------------------------------------------------------------------
+# Logs e Arquivos Temporários
+# ------------------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+*.bak
+
+# ------------------------------------------------------------------------------
+# Arquivos do Sistema Operacional (Windows / macOS / Linux)
+# ------------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.Spotlight-V100
+.Trashes

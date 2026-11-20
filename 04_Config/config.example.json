@@ -1,0 +1,11 @@
+{
+  "titulo_midia": "OmniDeploy - Mídia de Implantação Windows",
+  "versao": "1.0",
+  "autor": "Ygor Paes",
+  "chave_padrao_windows": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+  "usuario_zerotouch": "SuporteLocal",
+  "senha_zerotouch": "",
+  "servidor_ntp": "a.ntp.br",
+  "fuso_horario": "E. South America Standard Time",
+  "tamanho_winre_mb": 1024
+}
